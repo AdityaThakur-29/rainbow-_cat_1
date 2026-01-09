@@ -285,3 +285,44 @@ function loop() {
 }
 
 loop();
+
+/* ================== INPUT CONTROLS ================== */
+function handleInput() {
+  if (state === "START") {
+    state = "PLAY";
+    score = 0;
+    cat.reset();
+    pipes.reset();
+    trail.reset();
+    pipes.spawn();
+    document.getElementById("overlay").style.display = "none";
+  }
+  else if (state === "PLAY") {
+    cat.flap();
+  }
+  else if (state === "OVER") {
+    state = "START";
+    document.getElementById("overlay").style.display = "flex";
+  }
+}
+
+/* Keyboard */
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") {
+    e.preventDefault();
+    handleInput();
+  }
+});
+
+/* Mouse */
+canvas.addEventListener("mousedown", e => {
+  e.preventDefault();
+  handleInput();
+});
+
+/* Touch (Mobile) */
+canvas.addEventListener("touchstart", e => {
+  e.preventDefault();
+  handleInput();
+}, { passive: false });
+
