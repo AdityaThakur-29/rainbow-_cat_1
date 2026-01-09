@@ -3,9 +3,30 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
-
+// Internal resolution (Game logic coordinates)
 canvas.width = 360;
 canvas.height = 640;
+
+/* ================== RESPONSIVE SCALING (ADDITION) ================== */
+// This function ensures the game fits the screen without stretching
+function resizeGame() {
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+  
+  const scale = Math.min(
+    windowWidth / canvas.width, 
+    windowHeight / canvas.height
+  );
+
+  canvas.style.width = `${canvas.width * scale}px`;
+  canvas.style.height = `${canvas.height * scale}px`;
+  canvas.style.display = "block";
+  canvas.style.margin = "auto";
+}
+
+// Listen for window resize and trigger initial size
+window.addEventListener("resize", resizeGame);
+resizeGame();
 
 /* ================== CONSTANTS ================== */
 const GROUND_HEIGHT = 90;
@@ -179,20 +200,22 @@ function handleInput(e) {
     e.preventDefault();
   }
 
+  const overlay = document.getElementById("overlay");
+
   if (state === "START") {
     state = "PLAY";
     score = 0;
     cat.reset();
     pipes.reset();
     pipes.spawn();
-    document.getElementById("overlay").style.display = "none";
+    if(overlay) overlay.style.display = "none";
   }
   else if (state === "PLAY") {
     cat.flap();
   }
   else if (state === "OVER") {
     state = "START";
-    document.getElementById("overlay").style.display = "block";
+    if(overlay) overlay.style.display = "flex"; // Changed to flex to keep centering
   }
 }
 
@@ -246,8 +269,6 @@ function drawPixelNeonText(text, x, y, size = 32) {
   ctx.shadowBlur = 0;
 }
 
-
-
 function draw() {
   ctx.drawImage(assets.bg, 0, 0, canvas.width, canvas.height);
 
@@ -277,12 +298,11 @@ function draw() {
 
   drawPixelNeonText(score, canvas.width / 2, 52, 32);
 
-if (state === "OVER") {
-  drawPixelNeonText("GAME OVER", canvas.width / 2, 260, 24);
-  drawPixelNeonText("BEST " + best, canvas.width / 2, 300, 18);
-  drawPixelNeonText("TAP TO RESTART", canvas.width / 2, 340, 14);
-}
-
+  if (state === "OVER") {
+    drawPixelNeonText("GAME OVER", canvas.width / 2, 260, 24);
+    drawPixelNeonText("BEST " + best, canvas.width / 2, 300, 18);
+    drawPixelNeonText("TAP TO RESTART", canvas.width / 2, 340, 14);
+  }
 }
 
 /* ================== LOOP ================== */
