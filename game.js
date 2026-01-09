@@ -56,7 +56,7 @@ const assets = {
 
 assets.bg.src = "assets/flappybirdbg.png";
 assets.ground.src = "assets/ground.png";
-assets.cat.src = "assets/cat.gif";
+assets.cat.src = "assets/cat.png";
 assets.pipeTop.src = "assets/toppipr.png";
 assets.pipeBottom.src = "assets/Bottompipe.png";
 
@@ -70,8 +70,8 @@ let groundX = 0;
 const cat = {
   x: 80,
   y: 240,
-  w: 100,
-  h: 52,
+  w: 60,
+  h: 40,
   gravity: 0.1,
   jump: -4,
   velocity: 0,
