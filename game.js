@@ -70,8 +70,8 @@ let groundX = 0;
 const cat = {
   x: 80,
   y: 240,
-  w: 60,
-  h: 40,
+  w: 50,
+  h: 30,
   gravity: 0.1,
   jump: -4,
   velocity: 0,
