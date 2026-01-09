@@ -4,7 +4,6 @@ const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
 
-
 canvas.width = 360;
 canvas.height = 640;
 
@@ -46,14 +45,14 @@ const cat = {
   w: 100,
   h: 52,
   gravity: 0.1,
-  jump: -3.5,
+  jump: -4, 
   velocity: 0,
   rotation: 0,
 
   flap() {
     this.velocity = this.jump;
     assets.sounds.flap.currentTime = 0;
-    assets.sounds.flap.play().catch(() => { });
+    assets.sounds.flap.play().catch(() => {});
   },
 
   update() {
@@ -72,7 +71,7 @@ const cat = {
 
   reset() {
     this.y = 240;
-    this.velocity = 0;
+    this.velocity = 0; 
     this.rotation = 0;
   }
 };
@@ -81,7 +80,7 @@ const cat = {
 const pipes = {
   list: [],
   gap: 180,
-  speed: 2.0,
+  speed: 2.1,
   width: 60,
   height: 360,
 
@@ -120,7 +119,7 @@ const pipes = {
         p.scored = true;
         score++;
         assets.sounds.score.currentTime = 0;
-        assets.sounds.score.play().catch(() => { });
+        assets.sounds.score.play().catch(() => {});
       }
     }
 
@@ -165,16 +164,21 @@ function gameOver() {
 
   state = "OVER";
   assets.sounds.hit.currentTime = 0;
-  assets.sounds.hit.play().catch(() => { });
+  assets.sounds.hit.play().catch(() => {});
   assets.sounds.gameover.currentTime = 0;
-  assets.sounds.gameover.play().catch(() => { });
+  assets.sounds.gameover.play().catch(() => {});
 
   best = Math.max(score, best);
   localStorage.setItem("best", best);
 }
 
 /* ================== INPUT ================== */
-function handleInput() {
+function handleInput(e) {
+  // Prevent screen scrolling/zooming on mobile when tapping
+  if (e && e.type === "touchstart") {
+    e.preventDefault();
+  }
+
   if (state === "START") {
     state = "PLAY";
     score = 0;
@@ -192,12 +196,15 @@ function handleInput() {
   }
 }
 
+// Keyboard Controls (Desktop)
 document.addEventListener("keydown", e => {
-  if (e.code === "Space") handleInput();
+  if (e.code === "Space") handleInput(e);
 });
 
-canvas.addEventListener("click", handleInput);
-canvas.addEventListener("touchstart", handleInput);
+// Mobile & Mouse Controls
+// { passive: false } allows us to use preventDefault() to stop scrolling
+canvas.addEventListener("touchstart", handleInput, { passive: false });
+canvas.addEventListener("mousedown", handleInput);
 
 /* ================== UPDATE ================== */
 function update() {
@@ -240,6 +247,7 @@ function drawPixelNeonText(text, x, y, size = 32) {
 }
 
 
+
 function draw() {
   ctx.drawImage(assets.bg, 0, 0, canvas.width, canvas.height);
 
@@ -269,11 +277,11 @@ function draw() {
 
   drawPixelNeonText(score, canvas.width / 2, 52, 32);
 
-  if (state === "OVER") {
-    drawPixelNeonText("GAME OVER", canvas.width / 2, 260, 24);
-    drawPixelNeonText("BEST " + best, canvas.width / 2, 300, 18);
-    drawPixelNeonText("TAP TO RESTART", canvas.width / 2, 340, 14);
-  }
+if (state === "OVER") {
+  drawPixelNeonText("GAME OVER", canvas.width / 2, 260, 24);
+  drawPixelNeonText("BEST " + best, canvas.width / 2, 300, 18);
+  drawPixelNeonText("TAP TO RESTART", canvas.width / 2, 340, 14);
+}
 
 }
 
@@ -285,37 +293,3 @@ function loop() {
 }
 
 loop();
-
-/* ================== INPUT (MOBILE + DESKTOP SAFE) ================== */
-
-function startGame() {
-  state = "PLAY";
-  score = 0;
-  cat.reset();
-  pipes.reset();
-  pipes.spawn();
-  document.getElementById("overlay").style.display = "none";
-}
-
-function handleInput(e) {
-  if (e) e.preventDefault();
-
-  if (state === "START") {
-    startGame();
-  }
-  else if (state === "PLAY") {
-    cat.flap();
-  }
-  else if (state === "OVER") {
-    state = "START";
-    document.getElementById("overlay").style.display = "flex";
-  }
-}
-
-/* ✅ Keyboard */
-document.addEventListener("keydown", e => {
-  if (e.code === "Space") handleInput(e);
-});
-
-/* ✅ Pointer Events (BEST: mouse + touch) */
-canvas.addEventListener("pointerdown", handleInput);
