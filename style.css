@@ -1,0 +1,61 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #70c5ce;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  background: #70c5ce;
+  display: block;
+}
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+/* 🌈 PIXEL + NEON RAINBOW TEXT */
+.pixel-neon {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 32px;
+  text-align: center;
+
+  background: linear-gradient(
+    90deg,
+    #ff004c,
+    #ff9900,
+    #ffee00,
+    #00ff88,
+    #00aaff,
+    #b400ff
+  );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.3),
+    0 0 12px rgba(0, 0, 0, 0.8);
+
+  margin: 16px 0;
+}
+
+/* Smaller text */
+.pixel-neon.small {
+  font-size: 14px;
+}
