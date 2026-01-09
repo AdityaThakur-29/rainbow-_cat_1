@@ -286,16 +286,22 @@ function loop() {
 
 loop();
 
-/* ================== INPUT CONTROLS ================== */
-function handleInput() {
+/* ================== INPUT (MOBILE + DESKTOP SAFE) ================== */
+
+function startGame() {
+  state = "PLAY";
+  score = 0;
+  cat.reset();
+  pipes.reset();
+  pipes.spawn();
+  document.getElementById("overlay").style.display = "none";
+}
+
+function handleInput(e) {
+  if (e) e.preventDefault();
+
   if (state === "START") {
-    state = "PLAY";
-    score = 0;
-    cat.reset();
-    pipes.reset();
-    trail.reset();
-    pipes.spawn();
-    document.getElementById("overlay").style.display = "none";
+    startGame();
   }
   else if (state === "PLAY") {
     cat.flap();
@@ -306,23 +312,10 @@ function handleInput() {
   }
 }
 
-/* Keyboard */
+/* ✅ Keyboard */
 document.addEventListener("keydown", e => {
-  if (e.code === "Space") {
-    e.preventDefault();
-    handleInput();
-  }
+  if (e.code === "Space") handleInput(e);
 });
 
-/* Mouse */
-canvas.addEventListener("mousedown", e => {
-  e.preventDefault();
-  handleInput();
-});
-
-/* Touch (Mobile) */
-canvas.addEventListener("touchstart", e => {
-  e.preventDefault();
-  handleInput();
-}, { passive: false });
-
+/* ✅ Pointer Events (BEST: mouse + touch) */
+canvas.addEventListener("pointerdown", handleInput);

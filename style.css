@@ -45,8 +45,8 @@ canvas {
     #b400ff
   );
 
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+   -webkit-background-clip: text;
+   -webkit-text-fill-color: transparent;
 
   text-shadow:
     0 0 6px rgba(255, 255, 255, 0.3),
@@ -59,3 +59,8 @@ canvas {
 .pixel-neon.small {
   font-size: 14px;
 }
+
+canvas {
+  touch-action: manipulation;
+}
+
