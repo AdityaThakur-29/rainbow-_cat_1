@@ -3,29 +3,36 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
-// Internal resolution (Game logic coordinates)
-canvas.width = 360;
-canvas.height = 640;
+/* ================== GAME SIZE ================== */
+const GAME_WIDTH = 360;
+const GAME_HEIGHT = 640;
 
-/* ================== RESPONSIVE SCALING (ADDITION) ================== */
-// This function ensures the game fits the screen without stretching
+/* ================== DPI + RESPONSIVE ================== */
 function resizeGame() {
-  const windowWidth = window.innerWidth;
-  const windowHeight = window.innerHeight;
-  
+  const dpr = window.devicePixelRatio || 1;
+
+  // Set internal resolution (CRITICAL)
+  canvas.width = GAME_WIDTH * dpr;
+  canvas.height = GAME_HEIGHT * dpr;
+
+  // Reset transform BEFORE scaling
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+
+  // Fit canvas visually
   const scale = Math.min(
-    windowWidth / canvas.width, 
-    windowHeight / canvas.height
+    window.innerWidth / GAME_WIDTH,
+    window.innerHeight / GAME_HEIGHT
   );
 
-  canvas.style.width = `${canvas.width * scale}px`;
-  canvas.style.height = `${canvas.height * scale}px`;
+  canvas.style.width = GAME_WIDTH * scale + "px";
+  canvas.style.height = GAME_HEIGHT * scale + "px";
   canvas.style.display = "block";
   canvas.style.margin = "auto";
 }
 
-// Listen for window resize and trigger initial size
 window.addEventListener("resize", resizeGame);
+window.addEventListener("orientationchange", resizeGame);
 resizeGame();
 
 /* ================== CONSTANTS ================== */
@@ -54,7 +61,7 @@ assets.pipeTop.src = "assets/toppipr.png";
 assets.pipeBottom.src = "assets/Bottompipe.png";
 
 /* ================== GAME STATE ================== */
-let state = "START"; // START | PLAY | OVER
+let state = "START";
 let score = 0;
 let best = localStorage.getItem("best") || 0;
 let groundX = 0;
@@ -66,7 +73,7 @@ const cat = {
   w: 100,
   h: 52,
   gravity: 0.1,
-  jump: -4, 
+  jump: -4,
   velocity: 0,
   rotation: 0,
 
@@ -79,7 +86,7 @@ const cat = {
   update() {
     this.velocity += this.gravity;
     this.y += this.velocity;
-    this.rotation = Math.min(Math.max(this.velocity / 10, -0.5), 0.5);
+    this.rotation = Math.max(-0.5, Math.min(0.5, this.velocity / 10));
   },
 
   draw() {
@@ -92,7 +99,7 @@ const cat = {
 
   reset() {
     this.y = 240;
-    this.velocity = 0; 
+    this.velocity = 0;
     this.rotation = 0;
   }
 };
@@ -110,20 +117,17 @@ const pipes = {
   },
 
   spawn() {
-    const y = Math.random() * -200;
     this.list.push({
-      x: canvas.width,
-      y: y,
+      x: GAME_WIDTH,
+      y: Math.random() * -200,
       scored: false
     });
   },
 
   update() {
-    for (let i = 0; i < this.list.length; i++) {
-      const p = this.list[i];
+    for (const p of this.list) {
       p.x -= this.speed;
 
-      // COLLISION
       if (
         cat.x < p.x + this.width &&
         cat.x + cat.w > p.x &&
@@ -135,39 +139,28 @@ const pipes = {
         gameOver();
       }
 
-      // SCORE
       if (!p.scored && p.x + this.width < cat.x) {
         p.scored = true;
         score++;
-        assets.sounds.score.currentTime = 0;
         assets.sounds.score.play().catch(() => {});
       }
     }
 
-    // REMOVE OFFSCREEN PIPE
     if (this.list.length && this.list[0].x < -this.width) {
       this.list.shift();
     }
 
-    // DISTANCE-BASED SPAWN (NO OVERLAP EVER)
     if (
       this.list.length === 0 ||
-      canvas.width - this.list[this.list.length - 1].x >= PIPE_SPACING
+      GAME_WIDTH - this.list[this.list.length - 1].x >= PIPE_SPACING
     ) {
       this.spawn();
     }
   },
 
   draw() {
-    this.list.forEach(p => {
-      ctx.drawImage(
-        assets.pipeTop,
-        p.x,
-        p.y,
-        this.width,
-        this.height
-      );
-
+    for (const p of this.list) {
+      ctx.drawImage(assets.pipeTop, p.x, p.y, this.width, this.height);
       ctx.drawImage(
         assets.pipeBottom,
         p.x,
@@ -175,32 +168,48 @@ const pipes = {
         this.width,
         this.height
       );
-    });
+    }
   }
 };
 
 /* ================== GAME OVER ================== */
 function gameOver() {
   if (state !== "PLAY") return;
-
   state = "OVER";
-  assets.sounds.hit.currentTime = 0;
   assets.sounds.hit.play().catch(() => {});
-  assets.sounds.gameover.currentTime = 0;
   assets.sounds.gameover.play().catch(() => {});
-
   best = Math.max(score, best);
   localStorage.setItem("best", best);
 }
 
-/* ================== INPUT ================== */
-function handleInput(e) {
-  // Prevent screen scrolling/zooming on mobile when tapping
-  if (e && e.type === "touchstart") {
-    e.preventDefault();
+const overlay = document.getElementById("overlay");
+
+overlay.addEventListener("pointerdown", e => {
+  e.preventDefault();
+
+  // Hide overlay
+  overlay.style.display = "none";
+
+  // Start game
+  if (state === "START") {
+    state = "PLAY";
+    score = 0;
+    cat.reset();
+    pipes.reset();
+    pipes.spawn();
   }
 
-  const overlay = document.getElementById("overlay");
+  // Start loop if not started
+  if (!started) {
+    started = true;
+    loop();
+  }
+});
+
+
+/* ================== INPUT ================== */
+function handleInput(e) {
+  e.preventDefault();
 
   if (state === "START") {
     state = "PLAY";
@@ -208,26 +217,19 @@ function handleInput(e) {
     cat.reset();
     pipes.reset();
     pipes.spawn();
-    if(overlay) overlay.style.display = "none";
-  }
-  else if (state === "PLAY") {
+  } else if (state === "PLAY") {
     cat.flap();
-  }
-  else if (state === "OVER") {
+  } else if (state === "OVER") {
     state = "START";
-    if(overlay) overlay.style.display = "flex"; // Changed to flex to keep centering
   }
 }
 
-// Keyboard Controls (Desktop)
+canvas.style.touchAction = "none";
+canvas.addEventListener("pointerdown", handleInput);
+
 document.addEventListener("keydown", e => {
   if (e.code === "Space") handleInput(e);
 });
-
-// Mobile & Mouse Controls
-// { passive: false } allows us to use preventDefault() to stop scrolling
-canvas.addEventListener("touchstart", handleInput, { passive: false });
-canvas.addEventListener("mousedown", handleInput);
 
 /* ================== UPDATE ================== */
 function update() {
@@ -236,80 +238,62 @@ function update() {
   cat.update();
   pipes.update();
 
-  groundX = (groundX - pipes.speed) % canvas.width;
+  groundX = (groundX - pipes.speed) % GAME_WIDTH;
 
-  if (cat.y + cat.h >= canvas.height - GROUND_HEIGHT || cat.y < 0) {
+  if (cat.y + cat.h >= GAME_HEIGHT - GROUND_HEIGHT || cat.y < 0) {
     gameOver();
   }
 }
 
 /* ================== DRAW ================== */
-function drawPixelNeonText(text, x, y, size = 32) {
-  const gradient = ctx.createLinearGradient(x - 120, y, x + 120, y);
-  gradient.addColorStop(0, "#ff004c");
-  gradient.addColorStop(0.2, "#ff9900");
-  gradient.addColorStop(0.4, "#ffee00");
-  gradient.addColorStop(0.6, "#00ff88");
-  gradient.addColorStop(0.8, "#00aaff");
-  gradient.addColorStop(1, "#b400ff");
-
-  ctx.font = `${size}px 'Press Start 2P', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillStyle = gradient;
-
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = "#000";
-
-  ctx.shadowColor = "rgba(0,0,0,0.7)";
-  ctx.shadowBlur = 8;
-
-  ctx.strokeText(text, x, y);
-  ctx.fillText(text, x, y);
-
-  ctx.shadowBlur = 0;
-}
-
 function draw() {
-  ctx.drawImage(assets.bg, 0, 0, canvas.width, canvas.height);
-
+  ctx.drawImage(assets.bg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
   pipes.draw();
   cat.draw();
 
-  // Ground
   ctx.drawImage(
     assets.ground,
     groundX,
-    canvas.height - GROUND_HEIGHT,
-    canvas.width,
+    GAME_HEIGHT - GROUND_HEIGHT,
+    GAME_WIDTH,
     GROUND_HEIGHT
   );
   ctx.drawImage(
     assets.ground,
-    groundX + canvas.width,
-    canvas.height - GROUND_HEIGHT,
-    canvas.width,
+    groundX + GAME_WIDTH,
+    GAME_HEIGHT - GROUND_HEIGHT,
+    GAME_WIDTH,
     GROUND_HEIGHT
   );
 
-  // Score
   ctx.fillStyle = "#fff";
-  ctx.font = "32px Arial";
-  ctx.fillText(score, canvas.width / 2 - 10, 50);
-
-  drawPixelNeonText(score, canvas.width / 2, 52, 32);
+  ctx.font = "28px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(score, GAME_WIDTH / 2, 50);
 
   if (state === "OVER") {
-    drawPixelNeonText("GAME OVER", canvas.width / 2, 260, 24);
-    drawPixelNeonText("BEST " + best, canvas.width / 2, 300, 18);
-    drawPixelNeonText("TAP TO RESTART", canvas.width / 2, 340, 14);
+    ctx.fillText("GAME OVER", GAME_WIDTH / 2, 260);
+    ctx.fillText("BEST " + best, GAME_WIDTH / 2, 300);
+    ctx.fillText("TAP TO RESTART", GAME_WIDTH / 2, 340);
   }
 }
 
-/* ================== LOOP ================== */
+/* ================== LOOP (USER-GESTURE SAFE) ================== */
+let started = false;
+
 function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
 }
 
-loop();
+canvas.addEventListener(
+  "pointerdown",
+  () => {
+    if (!started) {
+      started = true;
+      loop();
+    }
+  },
+  { once: true }
+);
