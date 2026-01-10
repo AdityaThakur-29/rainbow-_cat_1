@@ -73,7 +73,7 @@ const cat = {
   y: 240,
   w: 50,
   h: 30,
-  gravity: 0.1,
+  gravity: 0.11,
   jump: -3,
   velocity: 0,
   rotation: 0,
@@ -109,7 +109,7 @@ const cat = {
 const pipes = {
   list: [],
   gap: 180,
-  speed: 2,
+  speed: 2.5 ,
   width: 60,
   height: 360,
 
