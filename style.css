@@ -37,6 +37,7 @@ canvas {
 .pixel-neon {
   color: #fff;
   text-align: center;
+  font-size: 24px;
   text-shadow:
     0 0 5px #ff00ff,
     0 0 10px #00ffff,
@@ -64,13 +65,102 @@ canvas {
 img#tsdc {
   position: absolute;
   top: 10px;
-  height: 33px;
+  height: 50px;
   left: 10px;
+}
+
+.overText {
+  margin-bottom: 30px;
+}
+
+.overText img {
+  width: 70vw;
+  height: auto !important;
 }
 
 img#csi {
   position: absolute;
   top: 10px;
   right: 10px;
-  height: 33px;
+  height: 50px;
+}
+
+/* Desktop responsive styles */
+@media (min-width: 768px) {
+  img#tsdc {
+    height: 60px;
+    top: 20px;
+    left: 20px;
+  }
+
+  img#csi {
+    height: 60px;
+    top: 20px;
+    right: 20px;
+  }
+
+  .pixel-neon {
+    font-size: 32px;
+  }
+
+  .pixel-neon.small {
+    font-size: 18px;
+    margin-top: 30px;
+  }
+
+  .pixel-neon.small.ig {
+    font-size: 14px;
+    line-height: 24px;
+    margin: 20px 15px;
+  }
+
+  #overlay {
+    gap: 15px;
+  }
+}
+
+/* Large desktop styles */
+@media (min-width: 1200px) {
+  img#tsdc {
+    height: 80px;
+    top: 30px;
+    left: 30px;
+  }
+
+  img#csi {
+    height: 80px;
+    top: 30px;
+    right: 30px;
+  }
+
+  .overText img {
+    width: 40vw !important;
+  }
+
+  .pixel-neon {
+    font-size: 40px;
+  }
+
+  .pixel-neon.small {
+    font-size: 22px;
+    margin-top: 40px;
+  }
+
+  .pixel-neon.small.ig {
+    font-size: 16px;
+    line-height: 28px;
+    margin: 25px 20px;
+  }
+}
+
+#igText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#igText span {
+  display: block;
+  float: left;
 }

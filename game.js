@@ -63,7 +63,8 @@ assets.pipeBottom.src = "assets/Bottompipe.png";
 /* ================== GAME STATE ================== */
 let state = "START";
 let score = 0;
-let best = localStorage.getItem("best") || 0;
+// parse stored best as integer to ensure numeric comparisons
+let best = parseInt(localStorage.getItem("best") || "0", 10);
 let groundX = 0;
 
 /* ================== CAT ================== */
@@ -73,7 +74,7 @@ const cat = {
   w: 50,
   h: 30,
   gravity: 0.1,
-  jump: -4,
+  jump: -3,
   velocity: 0,
   rotation: 0,
 
@@ -108,7 +109,7 @@ const cat = {
 const pipes = {
   list: [],
   gap: 180,
-  speed: 2.1,
+  speed: 2,
   width: 60,
   height: 360,
 
@@ -172,6 +173,94 @@ const pipes = {
   }
 };
 
+/* ================== RAINBOW TRAIL ================== */
+const rainbowTrail = {
+  particles: [],
+  maxLife: 40, // frames
+  hue: 0,
+  spawnRate: 1, // particles per update (can be fractional if desired)
+
+  spawn(x, y) {
+    this.particles.push({
+      x,
+      y,
+      life: this.maxLife,
+      hue: this.hue
+    });
+    this.hue = (this.hue + 8) % 360; // step hue for rainbow
+  },
+
+  update() {
+    // move particles left with the pipes speed and let them fall slightly
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.x -= pipes.speed; // follow world movement
+      p.y += 0.2; // slight downward drift
+      p.life--;
+      if (p.life <= 0) this.particles.splice(i, 1);
+    }
+  },
+
+  draw() {
+    // draw soft circles with alpha from life
+    for (const p of this.particles) {
+      const alpha = p.life / this.maxLife;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = `hsl(${p.hue}, 100%, 50%)`;
+      const r = 8; // radius
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+};
+
+/* ================== RAINBOW PIXEL TEXT HELPERS ================== */
+// replaced: drawRainbowPixelText — now draws tiled-pattern text (inspired by background) with subtle shadow + stroke
+function drawRainbowPixelText(text, cx, cy, opts = {}) {
+	const font = opts.font || "Arial";
+	const fontSize = opts.fontSize || 24;
+	const color = opts.color || "#FFFFFF";
+	const align = opts.align || "center";
+	const shadowColor = opts.shadowColor || "rgba(0,0,0,0.6)";
+	const shadowBlur = (typeof opts.shadowBlur === "number") ? opts.shadowBlur : Math.max(6, Math.floor(fontSize / 6));
+	const strokeColor = opts.strokeColor || "rgba(0,0,0,0.6)";
+	const strokeWidth = (typeof opts.strokeWidth === "number") ? opts.strokeWidth : Math.max(2, Math.floor(fontSize / 12));
+
+	ctx.save();
+	ctx.imageSmoothingEnabled = false;
+	ctx.font = `${fontSize}px ${font}`;
+	ctx.textAlign = align;
+	ctx.textBaseline = "middle";
+
+	// Create a repeating pattern from background if available, otherwise fallback to solid color
+	let fillStyle = color;
+	if (assets.bg && assets.bg.complete) {
+		try {
+			const pattern = ctx.createPattern(assets.bg, "repeat");
+			if (pattern) fillStyle = pattern;
+		} catch (e) {
+			fillStyle = color;
+		}
+	}
+
+	// Draw shadowed filled text (pattern or color)
+	ctx.shadowColor = shadowColor;
+	ctx.shadowBlur = shadowBlur;
+	ctx.fillStyle = fillStyle;
+	ctx.fillText(String(text), cx, cy);
+
+	// Draw a dark stroke on top for contrast and crispness
+	ctx.shadowBlur = 0;
+	ctx.shadowColor = "transparent";
+	ctx.lineWidth = strokeWidth;
+	ctx.strokeStyle = strokeColor;
+	ctx.strokeText(String(text), cx, cy);
+
+	ctx.restore();
+}
+
 /* ================== GAME OVER ================== */
 function gameOver() {
   if (state !== "PLAY") return;
@@ -179,7 +268,8 @@ function gameOver() {
   assets.sounds.hit.play().catch(() => {});
   assets.sounds.gameover.play().catch(() => {});
   best = Math.max(score, best);
-  localStorage.setItem("best", best);
+  // store as string explicitly
+  localStorage.setItem("best", String(best));
 }
 
 const overlay = document.getElementById("overlay");
@@ -238,6 +328,14 @@ function update() {
   cat.update();
   pipes.update();
 
+  // spawn trail at the cat's center while playing
+  const cx = cat.x + cat.w / 2;
+  const cy = cat.y + cat.h / 2;
+  // spawn one particle per update; tweak spawnRate if needed
+  rainbowTrail.spawn(cx, cy);
+
+  rainbowTrail.update();
+
   groundX = (groundX - pipes.speed) % GAME_WIDTH;
 
   if (cat.y + cat.h >= GAME_HEIGHT - GROUND_HEIGHT || cat.y < 0) {
@@ -247,35 +345,80 @@ function update() {
 
 /* ================== DRAW ================== */
 function draw() {
-  ctx.drawImage(assets.bg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
-  pipes.draw();
-  cat.draw();
+	// draw the full scene normally first
+	ctx.drawImage(assets.bg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
+	pipes.draw();
 
-  ctx.drawImage(
-    assets.ground,
-    groundX,
-    GAME_HEIGHT - GROUND_HEIGHT,
-    GAME_WIDTH,
-    GROUND_HEIGHT
-  );
-  ctx.drawImage(
-    assets.ground,
-    groundX + GAME_WIDTH,
-    GAME_HEIGHT - GROUND_HEIGHT,
-    GAME_WIDTH,
-    GROUND_HEIGHT
-  );
+	// draw trail before the cat so it appears behind
+	rainbowTrail.draw();
 
-  ctx.fillStyle = "#fff";
-  ctx.font = "28px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText(score, GAME_WIDTH / 2, 50);
+	cat.draw();
 
-  if (state === "OVER") {
-    ctx.fillText("GAME OVER", GAME_WIDTH / 2, 260);
-    ctx.fillText("BEST " + best, GAME_WIDTH / 2, 300);
-    ctx.fillText("TAP TO RESTART", GAME_WIDTH / 2, 340);
-  }
+	ctx.drawImage(
+		assets.ground,
+		groundX,
+		GAME_HEIGHT - GROUND_HEIGHT,
+		GAME_WIDTH,
+		GROUND_HEIGHT
+	);
+	ctx.drawImage(
+		assets.ground,
+		groundX + GAME_WIDTH,
+		GAME_HEIGHT - GROUND_HEIGHT,
+		GAME_WIDTH,
+		GROUND_HEIGHT
+	);
+
+	// If game over, blur the whole screen by capturing current canvas and redrawing blurred
+	if (state === "OVER") {
+		// capture current canvas to offscreen
+		const off = document.createElement("canvas");
+		off.width = GAME_WIDTH;
+		off.height = GAME_HEIGHT;
+		const offCtx = off.getContext("2d");
+		offCtx.imageSmoothingEnabled = false;
+		offCtx.drawImage(canvas, 0, 0);
+
+		// clear main canvas and draw blurred snapshot
+		ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+		ctx.save();
+		ctx.filter = "blur(6px)";
+		ctx.drawImage(off, 0, 0);
+		ctx.filter = "none";
+		// darken a bit on top of blurred scene
+		ctx.fillStyle = "rgba(0,0,0,0.25)";
+		ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+		ctx.restore();
+	}
+
+	// Score - rainbow pixel at top center (no backdrop)
+	const scoreText = String(score);
+	const scoreFontSize = 20;
+	const scoreScale = 3;
+	drawRainbowPixelText(scoreText, GAME_WIDTH / 2, 50, {
+		fontSize: scoreFontSize,
+		pixelScale: scoreScale,
+		hueShift: 0
+	});
+
+	// Overlay texts when game over (drawn sharp above blurred scene) — no black box behind them
+	if (state === "OVER") {
+		// show GAME OVER, current session SCORE and restart hint (BEST removed)
+		const lines = ["GAME OVER", "SCORE " + score, "TAP TO RESTART"];
+		const sizes = [34, 22, 16];
+		const scales = [5, 4, 3];
+		for (let i = 0; i < lines.length; i++) {
+			const tx = GAME_WIDTH / 2;
+			const ty = 250 + i * 44;
+			drawRainbowPixelText(lines[i], tx, ty, {
+				fontSize: sizes[i],
+				pixelScale: scales[i],
+				hueShift: 0,
+				color: "#FFFFFF",
+				shadowColor: "rgba(0,0,0,0.6)"
+			});
+		}
+	}
 }
 
 /* ================== LOOP (USER-GESTURE SAFE) ================== */
