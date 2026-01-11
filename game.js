@@ -117,7 +117,7 @@ const cat = {
 const pipes = {
   list: [],
   gap: 180,
-  speed: 2.5 ,
+  speed: 3.0,
   width: 60,
   height: 360,
 
