@@ -1,3 +1,4 @@
+
 /* ================== CANVAS ================== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -49,8 +50,7 @@ const assets = {
   sounds: {
     flap: new Audio("assets/sounds/flap.wav"),
     score: new Audio("assets/sounds/score.wav"),
-    hit: new Audio("assets/sounds/hit.wav"),
-    gameover: new Audio("assets/sounds/gameover.wav")
+    hit: new Audio("assets/sounds/hit.wav")
   }
 };
 
@@ -89,7 +89,7 @@ const cat = {
   flap() {
     this.velocity = this.jump;
     assets.sounds.flap.currentTime = 0;
-    assets.sounds.flap.play().catch(() => {});
+    assets.sounds.flap.play().catch(() => { });
   },
 
   update() {
@@ -151,7 +151,7 @@ const pipes = {
       if (!p.scored && p.x + this.width < cat.x) {
         p.scored = true;
         score++;
-        assets.sounds.score.play().catch(() => {});
+        assets.sounds.score.play().catch(() => { });
       }
     }
 
@@ -227,66 +227,82 @@ const rainbowTrail = {
 /* ================== RAINBOW PIXEL TEXT HELPERS ================== */
 // replaced: drawRainbowPixelText — now draws tiled-pattern text (inspired by background) with subtle shadow + stroke
 function drawRainbowPixelText(text, cx, cy, opts = {}) {
-	const font = opts.font || "Arial";
-	const fontSize = opts.fontSize || 24;
-	const color = opts.color || "#FFFFFF";
-	const align = opts.align || "center";
-	const shadowColor = opts.shadowColor || "rgba(0, 0, 0, 0.72)";
-	const shadowBlur = (typeof opts.shadowBlur === "number") ? opts.shadowBlur : Math.max(6, Math.floor(fontSize / 6));
+  const font = opts.font || "Arial";
+  const fontSize = opts.fontSize || 24;
+  const color = opts.color || "#FFFFFF";
+  const align = opts.align || "center";
+  const shadowColor = opts.shadowColor || "rgba(0, 0, 0, 0.72)";
+  const shadowBlur = (typeof opts.shadowBlur === "number") ? opts.shadowBlur : Math.max(6, Math.floor(fontSize / 6));
 
-// text color stroke
-	const strokeColor = opts.strokeColor || "rgba(251, 207, 247, 0.8)";
+  // text color stroke
+  const strokeColor = opts.strokeColor || "rgba(251, 207, 247, 0.8)";
 
 
-	const strokeWidth = (typeof opts.strokeWidth === "number") ? opts.strokeWidth : Math.max(2, Math.floor(fontSize / 12));
+  const strokeWidth = (typeof opts.strokeWidth === "number") ? opts.strokeWidth : Math.max(2, Math.floor(fontSize / 12));
 
-	ctx.save();
-	ctx.imageSmoothingEnabled = false;
-	ctx.font = `${fontSize}px ${font}`;
-	ctx.textAlign = align;
-	ctx.textBaseline = "middle";
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.font = `${fontSize}px ${font}`;
+  ctx.textAlign = align;
+  ctx.textBaseline = "middle";
 
-	// Create a repeating pattern from background if available, otherwise fallback to solid color
-	let fillStyle = color;
-	if (assets.bg && assets.bg.complete) {
-		try {
-			const pattern = ctx.createPattern(assets.bg, "repeat");
-			if (pattern) fillStyle = pattern;
-		} catch (e) {
-			fillStyle = color;
-		}
-	}
+  // Create a repeating pattern from background if available, otherwise fallback to solid color
+  let fillStyle = color;
+  if (assets.bg && assets.bg.complete) {
+    try {
+      const pattern = ctx.createPattern(assets.bg, "repeat");
+      if (pattern) fillStyle = pattern;
+    } catch (e) {
+      fillStyle = color;
+    }
+  }
 
-	// Draw shadowed filled text (pattern or color)
-	ctx.shadowColor = shadowColor;
-	ctx.shadowBlur = shadowBlur;
-	ctx.fillStyle = fillStyle;
-	ctx.fillText(String(text), cx, cy);
+  // Draw shadowed filled text (pattern or color)
+  ctx.shadowColor = shadowColor;
+  ctx.shadowBlur = shadowBlur;
+  ctx.fillStyle = fillStyle;
+  ctx.fillText(String(text), cx, cy);
 
-	// Draw a dark stroke on top for contrast and crispness
-	ctx.shadowBlur = 0;
-	ctx.shadowColor = "transparent";
-	ctx.lineWidth = strokeWidth;
-	ctx.strokeStyle = strokeColor;
-	ctx.strokeText(String(text), cx, cy);
+  // Draw a dark stroke on top for contrast and crispness
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
+  ctx.lineWidth = strokeWidth;
+  ctx.strokeStyle = strokeColor;
+  ctx.strokeText(String(text), cx, cy);
 
-	ctx.restore();
+  ctx.restore();
+}
+
+/* ================== GAME OVER OVERLAY ================== */
+const gameOverOverlay = document.getElementById("game-over-overlay");
+const finalScoreEl = document.getElementById("final-score");
+const bestScoreEl = document.getElementById("best-score");
+const retryBtn = document.getElementById("retry-btn");
+
+function showGameOverOverlay() {
+  finalScoreEl.textContent = score;
+  bestScoreEl.textContent = best;
+  gameOverOverlay.classList.add("visible");
+}
+
+function hideGameOverOverlay() {
+  gameOverOverlay.classList.remove("visible");
 }
 
 /* ================== GAME OVER ================== */
 function gameOver() {
   if (state !== "PLAY") return;
   state = "OVER";
-  assets.sounds.hit.play().catch(() => {});
-  assets.sounds.gameover.play().catch(() => {});
+  assets.sounds.hit.play().catch(() => { });
   best = Math.max(score, best);
   // store as string explicitly
   localStorage.setItem("best", String(best));
+  // Show HTML overlay instead of canvas rendering
+  showGameOverOverlay();
   // show screenshot button when game ends
   try {
     if (screenshotBtn) screenshotBtn.style.display = "block";
-  } catch (e) {}
- 
+  } catch (e) { }
 }
 
 const overlay = document.getElementById("overlay");
@@ -381,11 +397,38 @@ function handleInput(e) {
   } else if (state === "PLAY") {
     cat.flap();
   } else if (state === "OVER") {
-    state = "START";
+    // Restart game from OVER state
+    hideGameOverOverlay();
+    state = "PLAY";
+    score = 0;
+    cat.reset();
+    pipes.reset();
+    pipes.spawn();
+    rainbowTrail.particles = []; // Clear trail
     try {
       if (screenshotBtn) screenshotBtn.style.display = "none";
-    } catch (e) {}
+    } catch (e) { }
   }
+}
+
+// Retry button handler
+if (retryBtn) {
+  retryBtn.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (state === "OVER") {
+      hideGameOverOverlay();
+      state = "PLAY";
+      score = 0;
+      cat.reset();
+      pipes.reset();
+      pipes.spawn();
+      rainbowTrail.particles = [];
+      try {
+        if (screenshotBtn) screenshotBtn.style.display = "none";
+      } catch (e) { }
+    }
+  });
 }
 
 canvas.style.touchAction = "none";
@@ -419,112 +462,41 @@ function update() {
 
 /* ================== DRAW ================== */
 function draw() {
-	// draw the full scene normally first
-	ctx.drawImage(assets.bg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
-	pipes.draw();
+  // draw the full scene normally first
+  ctx.drawImage(assets.bg, 0, 0, GAME_WIDTH, GAME_HEIGHT);
+  pipes.draw();
 
-	// draw trail before the cat so it appears behind
-	rainbowTrail.draw();
+  // draw trail before the cat so it appears behind
+  rainbowTrail.draw();
 
-	cat.draw();
+  cat.draw();
 
-	ctx.drawImage(
-		assets.ground,
-		groundX,
-		GAME_HEIGHT - GROUND_HEIGHT,
-		GAME_WIDTH,
-		GROUND_HEIGHT
-	);
-	ctx.drawImage(
-		assets.ground,
-		groundX + GAME_WIDTH,
-		GAME_HEIGHT - GROUND_HEIGHT,
-		GAME_WIDTH,
-		GROUND_HEIGHT
-	);
+  ctx.drawImage(
+    assets.ground,
+    groundX,
+    GAME_HEIGHT - GROUND_HEIGHT,
+    GAME_WIDTH,
+    GROUND_HEIGHT
+  );
+  ctx.drawImage(
+    assets.ground,
+    groundX + GAME_WIDTH,
+    GAME_HEIGHT - GROUND_HEIGHT,
+    GAME_WIDTH,
+    GROUND_HEIGHT
+  );
 
-	// If game over, blur the whole screen by capturing current canvas and redrawing blurred
-	if (state === "OVER") {
-		// capture current canvas to offscreen
-		const off = document.createElement("canvas");
-		off.width = GAME_WIDTH;
-		off.height = GAME_HEIGHT;
-		const offCtx = off.getContext("2d");
-		offCtx.imageSmoothingEnabled = false;
-		offCtx.drawImage(canvas, 0, 0);
-
-		// clear main canvas and draw blurred snapshot
-		ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-		ctx.save();
-		ctx.filter = "blur(6px)";
-		ctx.drawImage(off, 0, 0);
-		ctx.filter = "none";
-		// darken a bit on top of blurred scene
-		ctx.fillStyle = "rgba(0, 0, 0, 0.37)";
-		ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-		ctx.restore();
-	}
-  
-
-	// Score - 
-	const scoreText = String(score);
-	const scoreFontSize = 20;
-	const scoreScale = 3;
-	drawRainbowPixelText(scoreText, GAME_WIDTH / 2, 50, {
-		fontSize: scoreFontSize,
-		pixelScale: scoreScale,
-		hueShift: 0
-	});
-
-
-
-
-	// Overlay texts when game over (drawn sharp above blurred scene) —
-
-
-
-
-	if (state === "OVER") {
-    // show GAME OVER, 
-    // draw Hackvision logo above the text if loaded
-    const logoW = 180;
-    const logoH = 48;
-    if (assets.hackvision && assets.hackvision.complete) {
-      ctx.drawImage(
-        assets.hackvision,
-        GAME_WIDTH / 2 - logoW / 2,
-        170 - logoH / 2,
-        logoW,
-        logoH
-      );
-    }
-    // draw CSI (top-left) and TSDC (top-right) logos
-    const sideLogoW = 50;
-    const sideLogoH = 50;
-    const pad = 8;
-    if (assets.csi && assets.csi.complete) {
-      ctx.drawImage(assets.csi, pad, pad, sideLogoW, sideLogoH);
-    }
-    if (assets.tsdc && assets.tsdc.complete) {
-      ctx.drawImage(assets.tsdc, GAME_WIDTH - sideLogoW - pad, pad, sideLogoW, sideLogoH);
-    }
-
-    // draw the overlay text lines
-    const lines = ["GAME OVER", "SCORE " + score, "TAP TO RESTART"];
-		const sizes = [34, 22, 16];
-		const scales = [5, 4, 3];
-		for (let i = 0; i < lines.length; i++) {
-			const tx = GAME_WIDTH / 2;
-			const ty = 250 + i * 44;
-			drawRainbowPixelText(lines[i], tx, ty, {
-				fontSize: sizes[i],
-				pixelScale: scales[i],
-				hueShift: 0,
-				color: "#ffffff",
-				shadowColor: "rgb(210, 0, 252)"
-			});
-		}
-	}
+  // Score display (only show when playing, not on game over since HTML overlay handles it)
+  if (state === "PLAY") {
+    const scoreText = String(score);
+    const scoreFontSize = 20;
+    const scoreScale = 3;
+    drawRainbowPixelText(scoreText, GAME_WIDTH / 2, 50, {
+      fontSize: scoreFontSize,
+      pixelScale: scoreScale,
+      hueShift: 0
+    });
+  }
 }
 
 /* ================== LOOP (USER-GESTURE SAFE) ================== */
