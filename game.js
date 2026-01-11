@@ -151,7 +151,10 @@ const pipes = {
       if (!p.scored && p.x + this.width < cat.x) {
         p.scored = true;
         score++;
-        assets.sounds.score.play().catch(() => { });
+        // Play score sound every 5 points
+        if (score % 5 === 0) {
+          assets.sounds.score.play().catch(() => { });
+        }
       }
     }
 
