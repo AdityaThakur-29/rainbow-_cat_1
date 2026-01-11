@@ -231,8 +231,8 @@ function drawRainbowPixelText(text, cx, cy, opts = {}) {
   const fontSize = opts.fontSize || 24;
   const color = opts.color || "#FFFFFF";
   const align = opts.align || "center";
-  const shadowColor = opts.shadowColor || "rgba(0, 0, 0, 0.72)";
-  const shadowBlur = (typeof opts.shadowBlur === "number") ? opts.shadowBlur : Math.max(6, Math.floor(fontSize / 6));
+  const shadowColor = opts.shadowColor || "transparent";
+  const shadowBlur = (typeof opts.shadowBlur === "number") ? opts.shadowBlur : 0;
 
   // text color stroke
   const strokeColor = opts.strokeColor || "rgba(251, 207, 247, 0.8)";
@@ -354,12 +354,36 @@ Object.assign(screenshotBtn.style, {
 screenshotBtn.setAttribute("aria-label", "Take screenshot");
 document.body.appendChild(screenshotBtn);
 
-// Screenshot handler: capture the current canvas and download as PNG
-screenshotBtn.addEventListener("click", e => {
+// Screenshot handler: capture the entire screen (including HTML/CSS) using html2canvas
+screenshotBtn.addEventListener("click", async e => {
   e.stopPropagation();
-  // Use toBlob for efficient binary download when available
-  if (canvas.toBlob) {
-    canvas.toBlob(blob => {
+
+  // Temporarily hide screenshot button for clean capture
+  screenshotBtn.style.display = "none";
+
+  try {
+    // Dynamically load html2canvas if not already loaded
+    if (typeof html2canvas === "undefined") {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    // Capture the entire document body
+    const captureCanvas = await html2canvas(document.body, {
+      backgroundColor: null,
+      scale: window.devicePixelRatio || 1,
+      useCORS: true,
+      allowTaint: true,
+      logging: false
+    });
+
+    // Download the captured image
+    captureCanvas.toBlob(blob => {
       if (!blob) return;
       const a = document.createElement("a");
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
@@ -371,15 +395,26 @@ screenshotBtn.addEventListener("click", e => {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     }, "image/png");
-  } else {
-    // Fallback to data URL
-    const data = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = data;
-    a.download = `flappy_screenshot_${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  } catch (err) {
+    console.error("Screenshot failed:", err);
+    // Fallback to canvas-only capture
+    if (canvas.toBlob) {
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const a = document.createElement("a");
+        const ts = new Date().toISOString().replace(/[:.]/g, "-");
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = `flappy_screenshot_${ts}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }, "image/png");
+    }
+  } finally {
+    // Show screenshot button again
+    screenshotBtn.style.display = "block";
   }
 });
 
