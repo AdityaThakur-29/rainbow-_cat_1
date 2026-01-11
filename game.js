@@ -59,6 +59,14 @@ assets.ground.src = "assets/ground.png";
 assets.cat.src = "assets/cat.png";
 assets.pipeTop.src = "assets/toppipr.png";
 assets.pipeBottom.src = "assets/Bottompipe.png";
+// Hackvision logo used in index.html; show on game-over too
+assets.hackvision = new Image();
+assets.hackvision.src = "assets/hackvision_logo.webp";
+// CSI and TSDC logos for game overlay
+assets.csi = new Image();
+assets.csi.src = "assets/csi_logo.webp";
+assets.tsdc = new Image();
+assets.tsdc.src = "assets/tsdc_logo.webp";
 
 /* ================== GAME STATE ================== */
 let state = "START";
@@ -73,7 +81,7 @@ const cat = {
   y: 240,
   w: 50,
   h: 30,
-  gravity: 0.11,
+  gravity: 0.12,
   jump: -3,
   velocity: 0,
   rotation: 0,
@@ -223,9 +231,13 @@ function drawRainbowPixelText(text, cx, cy, opts = {}) {
 	const fontSize = opts.fontSize || 24;
 	const color = opts.color || "#FFFFFF";
 	const align = opts.align || "center";
-	const shadowColor = opts.shadowColor || "rgba(0,0,0,0.6)";
+	const shadowColor = opts.shadowColor || "rgba(0, 0, 0, 0.72)";
 	const shadowBlur = (typeof opts.shadowBlur === "number") ? opts.shadowBlur : Math.max(6, Math.floor(fontSize / 6));
-	const strokeColor = opts.strokeColor || "rgba(0,0,0,0.6)";
+
+// text color stroke
+	const strokeColor = opts.strokeColor || "rgba(251, 207, 247, 0.8)";
+
+
 	const strokeWidth = (typeof opts.strokeWidth === "number") ? opts.strokeWidth : Math.max(2, Math.floor(fontSize / 12));
 
 	ctx.save();
@@ -270,6 +282,7 @@ function gameOver() {
   best = Math.max(score, best);
   // store as string explicitly
   localStorage.setItem("best", String(best));
+ 
 }
 
 const overlay = document.getElementById("overlay");
@@ -386,12 +399,13 @@ function draw() {
 		ctx.drawImage(off, 0, 0);
 		ctx.filter = "none";
 		// darken a bit on top of blurred scene
-		ctx.fillStyle = "rgba(0,0,0,0.25)";
+		ctx.fillStyle = "rgba(0, 0, 0, 0.37)";
 		ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 		ctx.restore();
 	}
+  
 
-	// Score - rainbow pixel at top center (no backdrop)
+	// Score - 
 	const scoreText = String(score);
 	const scoreFontSize = 20;
 	const scoreScale = 3;
@@ -401,10 +415,41 @@ function draw() {
 		hueShift: 0
 	});
 
-	// Overlay texts when game over (drawn sharp above blurred scene) — no black box behind them
+
+
+
+	// Overlay texts when game over (drawn sharp above blurred scene) —
+
+
+
+
 	if (state === "OVER") {
-		// show GAME OVER, current session SCORE and restart hint (BEST removed)
-		const lines = ["GAME OVER", "SCORE " + score, "TAP TO RESTART"];
+    // show GAME OVER, 
+    // draw Hackvision logo above the text if loaded
+    const logoW = 180;
+    const logoH = 48;
+    if (assets.hackvision && assets.hackvision.complete) {
+      ctx.drawImage(
+        assets.hackvision,
+        GAME_WIDTH / 2 - logoW / 2,
+        170 - logoH / 2,
+        logoW,
+        logoH
+      );
+    }
+    // draw CSI (top-left) and TSDC (top-right) logos
+    const sideLogoW = 50;
+    const sideLogoH = 50;
+    const pad = 8;
+    if (assets.csi && assets.csi.complete) {
+      ctx.drawImage(assets.csi, pad, pad, sideLogoW, sideLogoH);
+    }
+    if (assets.tsdc && assets.tsdc.complete) {
+      ctx.drawImage(assets.tsdc, GAME_WIDTH - sideLogoW - pad, pad, sideLogoW, sideLogoH);
+    }
+
+    // draw the overlay text lines
+    const lines = ["GAME OVER", "SCORE " + score, "TAP TO RESTART"];
 		const sizes = [34, 22, 16];
 		const scales = [5, 4, 3];
 		for (let i = 0; i < lines.length; i++) {
@@ -414,8 +459,8 @@ function draw() {
 				fontSize: sizes[i],
 				pixelScale: scales[i],
 				hueShift: 0,
-				color: "#FFFFFF",
-				shadowColor: "rgba(0,0,0,0.6)"
+				color: "#ffffff",
+				shadowColor: "rgb(210, 0, 252)"
 			});
 		}
 	}
