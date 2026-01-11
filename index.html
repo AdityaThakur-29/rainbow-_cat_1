@@ -1,33 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Flippy Cat 🐱</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
- <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
 </head>
+
 <body>
-  <canvas id="game"> 
+  <canvas id="game">
   </canvas>
   <div id="overlay">
-    <img id="csi" src="assets/csi_logo.webp"  alt="csi">
-    <img  id="tsdc"  src="assets/tsdc_logo.webp"  alt="tsdc">
-  <div class="overText">
-    <img src="/assets/hackvision_logo.webp" alt="Hackvision">
-    
+    <img id="csi" src="assets/csi_logo.webp" alt="csi">
+    <img id="tsdc" src="assets/tsdc_logo.webp" alt="tsdc">
+    <div class="overText">
+      <img src="/assets/hackvision_logo.webp" alt="Hackvision">
+
+    </div>
+    <h1 class="pixel-neon">RAINBOW CAT</h1>
+    <p id="igText" class="pixel-neon small ig">
+      <span>Post your score on your IG Story,</span>
+      <span>tag @csixtsdc, and</span>
+      <span>you might get featured on our IG Page!</span>
+    </p>
+    <p class="pixel-neon small">TAP TO START</p>
   </div>
-  <h1 class="pixel-neon">RAINBOW CAT</h1>
-  <p id="igText" class="pixel-neon small ig">
-    <span>Post your score on your IG Story,</span>
-    <span>tag @csixtsdc, and</span>
-    <span>you might get featured on our IG Page!</span>
-  </p>
-  <p class="pixel-neon small">TAP TO START</p>
-</div>
+
+  <!-- Game Over Overlay -->
+  <div id="game-over-overlay">
+    <div class="game-over-content">
+      <div class="logos-row">
+        <img src="assets/tsdc_logo.webp" alt="TSDC" class="side-logo">
+        <img src="assets/hackvision_logo.webp" alt="Hackvision" class="center-logo">
+        <img src="assets/csi_logo.webp" alt="CSI" class="side-logo">
+      </div>
+      <h1 class="game-over-title">GAME OVER</h1>
+      <p class="score-display">SCORE: <span id="final-score">0</span></p>
+      <p class="best-score">BEST: <span id="best-score">0</span></p>
+      <button id="retry-btn" class="retry-button">TAP TO RESTART</button>
+      <div class="button-row">
+        <a href="https://unstop.com/o/8YEQtVf?lb=xk26YO1e&utm_medium=Share&utm_source=abhadho42350&utm_campaign=Online_coding_challenge"
+          target="_blank" class="register-button">REGISTER NOW</a>
+        <a href="https://instagram.com/csixtsdc" target="_blank" class="follow-button">FOLLOW US</a>
+      </div>
+      <p class="ig-promo">Post your best score on IG Story</p>
+      <p class="ig-promo">Tag @csixtsdc</p>
+      <p class="ig-promo">You might get featured on our IG Page!</p>
+    </div>
+  </div>
 
   <script src="game.js"></script>
 </body>
+
 </html>
