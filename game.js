@@ -282,6 +282,10 @@ function gameOver() {
   best = Math.max(score, best);
   // store as string explicitly
   localStorage.setItem("best", String(best));
+  // show screenshot button when game ends
+  try {
+    if (screenshotBtn) screenshotBtn.style.display = "block";
+  } catch (e) {}
  
 }
 
@@ -309,6 +313,60 @@ overlay.addEventListener("pointerdown", e => {
   }
 });
 
+// Create screenshot button (hidden by default). Appears bottom-left on game over.
+
+
+
+const screenshotBtn = document.createElement("button");
+screenshotBtn.id = "screenshot-btn";
+screenshotBtn.textContent = "Screenshot";
+Object.assign(screenshotBtn.style, {
+  position: "fixed",
+  left: "12px",
+  bottom: "50px",
+  zIndex: 2000,
+  padding: "8px 10px",
+  fontSize: "14px",
+  borderRadius: "6px",
+  border: "none",
+  background: "rgba(87, 226, 248, 0.98)",
+  color: "#222222",
+  cursor: "pointer",
+  display: "none",
+  boxShadow: "0 2px 13px rgba(255, 255, 255, 0.62)"
+});
+screenshotBtn.setAttribute("aria-label", "Take screenshot");
+document.body.appendChild(screenshotBtn);
+
+// Screenshot handler: capture the current canvas and download as PNG
+screenshotBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  // Use toBlob for efficient binary download when available
+  if (canvas.toBlob) {
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const a = document.createElement("a");
+      const ts = new Date().toISOString().replace(/[:.]/g, "-");
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = `flappy_screenshot_${ts}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }, "image/png");
+  } else {
+    // Fallback to data URL
+    const data = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = data;
+    a.download = `flappy_screenshot_${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+});
+
 
 /* ================== INPUT ================== */
 function handleInput(e) {
@@ -324,6 +382,9 @@ function handleInput(e) {
     cat.flap();
   } else if (state === "OVER") {
     state = "START";
+    try {
+      if (screenshotBtn) screenshotBtn.style.display = "none";
+    } catch (e) {}
   }
 }
 
